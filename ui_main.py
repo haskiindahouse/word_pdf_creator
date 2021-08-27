@@ -2,21 +2,27 @@ import sys
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
-from PyQt5.QtGui import QPixmap, QIcon, QColor, QFont
-from tablemodel import TableModel
+from PyQt5.QtGui import QPixmap, QIcon, QColor, QFont, QStandardItem, QStandardItemModel
 from PyQt5.QtCore import Qt
-import numpy as np
+
 
 class Ui(QWidget):
 
     def __init__(self, model):
         super().__init__()
-        self.setTableView(model)
+        self.model = model
+        self.setTableView()
         self.initUi()
 
-    def setTableView(self, model):
+    def setTableView(self):
+
         self.tableView = QTableView()
-        self.tableView.setModel(model)
+        self.tableView.setModel(self.model)
+        self.tableView.setWordWrap(True)
+        self.tableView.setTextElideMode(Qt.ElideMiddle)
+        self.tableView.resizeRowsToContents()
+        self.tableView.setEditTriggers(QAbstractItemView.AllEditTriggers)
+        self.tableView.setStyleSheet("QHeaderView::section { background-color: grey }")
         header = self.tableView.horizontalHeader()
         font = QFont("Arial", 20, QFont.Bold)
         header.setFont(font)
@@ -70,14 +76,17 @@ class Ui(QWidget):
         self.addProduct = QPushButton('Добавить продукт', self)
         self.addProduct.setFont(font1)
         self.addProduct.setFixedSize(150, 50)
+        self.addProduct.clicked.connect(self.appendProductToModel)
 
         self.addCategory = QPushButton('Добавить категорию', self)
         self.addCategory.setFont(font1)
         self.addCategory.setFixedSize(150, 50)
+        self.addCategory.clicked.connect(self.appendCategoryToModel)
 
         self.resultBtn = QPushButton('Подсчитать ИТОГО', self)
         self.resultBtn.setFont(font1)
         self.resultBtn.setFixedSize(150, 50)
+        self.resultBtn.clicked.connect(self.countResult)
 
         self.paymentBox = QComboBox(self)
         self.paymentBox.setMinimumWidth(120)
@@ -91,7 +100,6 @@ class Ui(QWidget):
 
         verticalLayout.addLayout(horizontalButtonLayout)
         verticalLayout.addWidget(self.tableView)
-
 
         btnHLayout = QHBoxLayout(self)
         self.addFileBtn = QPushButton('Добавить запись в файл', self)
@@ -114,6 +122,23 @@ class Ui(QWidget):
         self.resize(800, 800)
         self.show()
 
+    def appendProductToModel(self):
+        items = [QStandardItem("") for i in range(4)]
+        self.model.appendRow(items)
+
+    def appendCategoryToModel(self):
+        items = [QStandardItem("") for i in range(4)]
+        items[0].setBackground(QColor("lightGray"))
+        self.model.appendRow(items)
+
+    def countResult(self):
+        items = [QStandardItem("") for i in range(4)]
+        items[0].setText("ИТОГО")
+        items[-1].setText(self.paymentBox.currentText())
+        for item in items:
+            item.setBackground(QColor(247, 134, 5))
+        self.model.appendRow(items)
+
     def formFile(self):
         name, _ = QFileDialog.getSaveFileName(self,
                                               'Save File',
@@ -128,9 +153,9 @@ class Ui(QWidget):
 
     def startToListen(self):
         self.file, _ = QFileDialog.getOpenFileName(self,
-                                                        'Открыть файл',
-                                                        './',
-                                                        'Поставщики (*.txt)')
+                                                   'Открыть файл',
+                                                   './',
+                                                   'Поставщики (*.txt)')
         if not self.file:
             return
         with open(self.file) as f:
@@ -143,26 +168,24 @@ class Ui(QWidget):
         if not self.file or not self.lineEdit.text():
             return
         text = self.lineEdit.text()
-        print(self.file[0])
-        with open(self.file[0], 'a+') as f:
+        with open(self.file, 'a+') as f:
             f.seek(0)
             lines = f.readlines()
-            print(lines)
             if text + '\n' in lines:
                 return
             f.write(text + '\n')
             self.comboBox.addItem(text)
 
     def onActivated(self, text):
-        self.lbl.setText(text)
-        self.lbl.adjustSize()
+        return
 
 
 def initUi():
     app = QApplication(sys.argv)
-    data = [[i for i in range(4)] for _ in range(4)]
 
-    model = TableModel(data)
+    model = QStandardItemModel()
+    model.setHorizontalHeaderLabels(["Наименование", "К-во", "Цена", "Прим."])
+
     ex = Ui(model)
 
     sys.exit(app.exec_())
