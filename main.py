@@ -1,8 +1,9 @@
 from docx import Document
 from docx.shared import Inches
 from ui_main import initUi
-document = Document()
 
+
+document = Document()
 document.add_heading('Document Title', 0)
 
 p = document.add_paragraph('A plain paragraph having some ')
@@ -29,6 +30,7 @@ records = (
 )
 
 table = document.add_table(rows=1, cols=3)
+table.style = 'TableGrid'
 hdr_cells = table.rows[0].cells
 hdr_cells[0].text = 'Qty'
 hdr_cells[1].text = 'Id'
