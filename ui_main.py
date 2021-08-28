@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5.QtGui import QPixmap, QIcon, QColor, QFont, QStandardItem, QStandardItemModel
 from PyQt5.QtCore import Qt
+from document_composer import DocumentComposer
 
 
 class Ui(QWidget):
@@ -11,6 +12,9 @@ class Ui(QWidget):
     def __init__(self, model):
         super().__init__()
         self.model = model
+
+        self.document = DocumentComposer()
+
         self.setTableView()
         self.initUi()
 
@@ -81,6 +85,11 @@ class Ui(QWidget):
         self.addProduct.setFixedSize(150, 50)
         self.addProduct.clicked.connect(self.appendProductToModel)
 
+        self.addCategoryToProduct = QPushButton('Назначить категорию', self)
+        self.addCategoryToProduct.setFont(font1)
+        self.addCategoryToProduct.setFixedSize(150, 50)
+        self.addCategoryToProduct.clicked.connect(self.appendCategoryToProduct)
+
         self.categoriesFile = ""
         self.categoriesBtn = QPushButton('Открыть файл с категориями', self)
         self.categoriesBtn.setFont(font1)
@@ -118,6 +127,7 @@ class Ui(QWidget):
         self.paymentBox.addItem("Оплата наличными")
 
         horizontalButtonLayout.addWidget(self.addProduct)
+        horizontalButtonLayout.addWidget(self.addCategoryToProduct)
         horizontalButtonLayout.addWidget(self.resultBtn)
         horizontalButtonLayout.addWidget(self.paymentBox)
 
@@ -128,6 +138,7 @@ class Ui(QWidget):
         self.addFileBtn = QPushButton('Добавить запись в файл', self)
         self.addFileBtn.setFont(font1)
         self.addFileBtn.setFixedSize(150, 50)
+        self.addFileBtn.clicked.connect(self.addFile)
 
         self.downloadBtn = QPushButton('Сохранить файл', self)
         self.downloadBtn.setFont(font1)
@@ -144,6 +155,16 @@ class Ui(QWidget):
         self.setWindowTitle('wordCreator v1.0')
         self.resize(800, 800)
         self.show()
+
+    def appendCategoryToProduct(self):
+        """
+        Назначает текущему товару в таблице категорию из categoryBox.
+        Сама категория отображается только на моменте формирования моделей для документа.
+        """
+        currentCategory = self.categoriesLineEdit.text()
+        for row in range(self.model.rowCount()):
+            for column in range(self.model.columnCount()):
+                self.model.item(row, column).setData(currentCategory, 1)
 
     def appendProductToModel(self):
         items = [QStandardItem("") for _ in range(4)]
@@ -169,7 +190,7 @@ class Ui(QWidget):
             self.categoriesComboBox.addItem(text)
 
     def countResult(self):
-        items = [QStandardItem("") for i in range(4)]
+        items = [QStandardItem("") for _ in range(4)]
         items[0].setText("ИТОГО")
         items[-1].setText(self.paymentBox.currentText())
         for item in items:
@@ -177,16 +198,15 @@ class Ui(QWidget):
         self.model.appendRow(items)
 
     def formFile(self):
-        name, _ = QFileDialog.getSaveFileName(self,
+        name, a = QFileDialog.getSaveFileName(self,
                                               'Save File',
                                               '',
-                                              'Word(*.word);;Pdf(*.pdf)')
+                                              '.docx;;.pdf')
         if not name:
             return
-        file = open(name, 'w')
-        text = self.textEdit.toPlainText()
-        file.write(text)
-        file.close()
+        print(name)
+        print(a)
+        self.document.saveToFile(name, a, self.dateEdit.date().toPyDate())
 
     def startToListen(self, flag=True):
         if flag:
@@ -225,6 +245,16 @@ class Ui(QWidget):
                 return
             f.write(text + '\n')
             self.comboBox.addItem(text)
+
+    def addFile(self):
+        """
+        Отправляет модель для дальнейшей записи ее в файл.
+        Чистит модель.
+        :return:
+        """
+        self.document.appendDataToTable(self.model)
+        self.model.clear()
+        self.model.setHorizontalHeaderLabels(["Наименование", "К-во", "Цена", "Прим."])
 
 
 def initUi():
