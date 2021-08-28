@@ -34,12 +34,12 @@ class Ui(QWidget):
         gridLayout = QGridLayout(self)
         hBox = QHBoxLayout(self)
         self.file = ""
-        self.fileOpenBtn = QPushButton('Выбрать файл', self)
+        self.fileOpenBtn = QPushButton('Открыть файл с заказчиками', self)
         font1 = self.fileOpenBtn.font()
         font1.setPointSize(10)
         self.fileOpenBtn.setFont(font1)
         self.fileOpenBtn.setFixedSize(200, 50)
-        self.fileOpenBtn.clicked.connect(self.startToListen)
+        self.fileOpenBtn.clicked.connect(lambda: self.startToListen(flag=True))
 
         self.lineEdit = QLineEdit(self)
         self.lineEdit.setText("Заказчик")
@@ -60,28 +60,52 @@ class Ui(QWidget):
         self.dateEdit.setTimeSpec(QtCore.Qt.LocalTime)
         self.dateEdit.setGeometry(QtCore.QRect(220, 31, 133, 20))
 
+        comboVLayout = QVBoxLayout(self)
         self.comboBox = QComboBox(self)
-        self.comboBox.setMinimumWidth(10)
-        self.comboBox.activated[str].connect(self.onActivated)
+        self.comboBox.setMinimumWidth(100)
+        self.comboBox.setBaseSize(100, 50)
+        comboVLayout.addWidget(self.comboBox)
+        self.comboBox.maximumSize()
         hBox.addWidget(self.fileOpenBtn)
         hBox.addWidget(self.addCustomerBtn)
         hBox.addWidget(self.lineEdit)
         hBox.addWidget(self.dateEdit)
         gridLayout.addLayout(hBox, 0, 0)
         verticalLayout.addLayout(gridLayout)
-        verticalLayout.addWidget(self.comboBox)
+        verticalLayout.addLayout(comboVLayout)
 
-        # ------
         horizontalButtonLayout = QHBoxLayout(self)
+
         self.addProduct = QPushButton('Добавить продукт', self)
         self.addProduct.setFont(font1)
         self.addProduct.setFixedSize(150, 50)
         self.addProduct.clicked.connect(self.appendProductToModel)
 
+        self.categoriesFile = ""
+        self.categoriesBtn = QPushButton('Открыть файл с категориями', self)
+        self.categoriesBtn.setFont(font1)
+        self.categoriesBtn.setFixedSize(200, 50)
+        self.categoriesBtn.clicked.connect(lambda: self.startToListen(flag=False))
+
+        self.categoriesComboBox = QComboBox(self)
+
         self.addCategory = QPushButton('Добавить категорию', self)
         self.addCategory.setFont(font1)
+        self.addCategory.setEnabled(False)
         self.addCategory.setFixedSize(150, 50)
-        self.addCategory.clicked.connect(self.appendCategoryToModel)
+        self.addCategory.clicked.connect(self.appendCategoryToComboBox)
+
+        self.categoriesLineEdit = QLineEdit(self)
+        self.categoriesLineEdit.setText("Категория")
+        self.categoriesLineEdit.setAlignment(Qt.AlignCenter)
+        self.categoriesLineEdit.setFixedSize(100, 20)
+
+        categoriesLayout = QHBoxLayout(self)
+        categoriesLayout.addWidget(self.categoriesBtn)
+        categoriesLayout.addWidget(self.addCategory)
+        categoriesLayout.addWidget(self.categoriesLineEdit)
+        categoriesLayout.addWidget(self.categoriesComboBox)
+        verticalLayout.addLayout(categoriesLayout)
 
         self.resultBtn = QPushButton('Подсчитать ИТОГО', self)
         self.resultBtn.setFont(font1)
@@ -94,7 +118,6 @@ class Ui(QWidget):
         self.paymentBox.addItem("Оплата наличными")
 
         horizontalButtonLayout.addWidget(self.addProduct)
-        horizontalButtonLayout.addWidget(self.addCategory)
         horizontalButtonLayout.addWidget(self.resultBtn)
         horizontalButtonLayout.addWidget(self.paymentBox)
 
@@ -123,13 +146,27 @@ class Ui(QWidget):
         self.show()
 
     def appendProductToModel(self):
-        items = [QStandardItem("") for i in range(4)]
+        items = [QStandardItem("") for _ in range(4)]
         self.model.appendRow(items)
 
-    def appendCategoryToModel(self):
-        items = [QStandardItem("") for i in range(4)]
+    def appendCategoryToComboBox(self):
+        """
+        # Раньше добавлялась в модель категорию для отображения в таблицу,
+        # Теперь задается записи и при выгрузке в pdf/word уже добавляются нужные записи о категориях
+        items = [QStandardItem("") for _ in range(4)]
         items[0].setBackground(QColor("lightGray"))
         self.model.appendRow(items)
+        """
+        if not self.categoriesFile or not self.categoriesLineEdit.text():
+            return
+        text = self.categoriesLineEdit.text()
+        with open(self.categoriesFile, 'a+') as f:
+            f.seek(0)
+            lines = f.readlines()
+            if text + '\n' in lines:
+                return
+            f.write(text + '\n')
+            self.categoriesComboBox.addItem(text)
 
     def countResult(self):
         items = [QStandardItem("") for i in range(4)]
@@ -151,18 +188,31 @@ class Ui(QWidget):
         file.write(text)
         file.close()
 
-    def startToListen(self):
-        self.file, _ = QFileDialog.getOpenFileName(self,
-                                                   'Открыть файл',
-                                                   './',
-                                                   'Поставщики (*.txt)')
-        if not self.file:
+    def startToListen(self, flag=True):
+        if flag:
+            self.file, _ = QFileDialog.getOpenFileName(self,
+                                                       'Открыть файл с заказчиками',
+                                                       './',
+                                                       'Поставщики (*.txt)')
+            fileName = self.file
+            comboBox = self.comboBox
+            self.addCustomerBtn.setEnabled(True)
+        else:
+            self.categoriesFile, _ = QFileDialog.getOpenFileName(self,
+                                                       'Открыть файл с категориями',
+                                                       './',
+                                                       'Поставщики (*.txt)')
+            fileName = self.categoriesFile
+            comboBox = self.categoriesComboBox
+            self.addCategory.setEnabled(True)
+
+        if not fileName:
             return
-        with open(self.file) as f:
+        with open(fileName) as f:
             lines = f.readlines()
+        comboBox.clear()
         for line in lines:
-            self.comboBox.addItem(line)
-        self.addCustomerBtn.setEnabled(True)
+            comboBox.addItem(line)
 
     def writeCustomer(self):
         if not self.file or not self.lineEdit.text():
@@ -175,9 +225,6 @@ class Ui(QWidget):
                 return
             f.write(text + '\n')
             self.comboBox.addItem(text)
-
-    def onActivated(self, text):
-        return
 
 
 def initUi():
