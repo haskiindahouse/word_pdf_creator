@@ -10,6 +10,8 @@ class DocumentComposer:
         super(DocumentComposer, self).__init__()
         self.document = Document()
         self.data = []
+        self.table = self.document.add_table(rows=1, cols=4)
+        self.table.style = 'TableGrid'
 
     def appendHeader(self, date):
         """
@@ -19,17 +21,17 @@ class DocumentComposer:
         locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
         date = '"' + str(date.day) + '"' + " " + str(date.strftime('%B')).title() + " " + str(date.year) + " г."
         titleName = "Заявка на " + date
-        header = self.document.add_heading(titleName, 0)
-        header.alignment = 1
-        header.bold = True
-        header.underline = True
+        cell = self.table.rows[0].cells[0]
+        cell.text = titleName
+        cell.bold = True
+        cell.underline = True
+        cell.merge(self.table.rows[0].cells[3])
 
     def appendDataToTable(self, model):
         """
         Добавляет в общий контейнер с данными запись из модели.
         На вход приходит уже преобразованная data from Model.
         Для удобства все хранится в list.
-        :return:
         """
         newTable = []
         headers = []
@@ -41,18 +43,17 @@ class DocumentComposer:
             for column in range(model.columnCount()):
                 index = model.index(row, column)
                 newTable[row].append(str(model.data(index)))
+        newTable = newTable[:len(newTable) - 1]
         self.data.append(newTable)
 
     def appendTableToFile(self, table):
         """
         Добавляет таблицу в файл
-        :return:
         """
-        fileTable = self.document.add_table(rows=len(table), cols=len(table[-1]))
-        fileTable.style = 'TableGrid'
         for row in range(len(table)):
+            self.table.add_row()
             for column in range(len(table[-1])):
-                cell = fileTable.rows[row].cells[column]
+                cell = self.table.rows[len(self.table.rows) - 1].cells[column]
                 cell.text = table[row][column]
 
     def writeTablesToFile(self):
@@ -66,11 +67,8 @@ class DocumentComposer:
         """
         Общий метод сохранения.
         Содержит в себе вызовы всех вспомогательных методов класса.
-        TODO:
-        Изменить метод.
-        Все данные теперь хранятся в единой таблице.
-        Заголовок перевести на объединенную ячейку.
         """
         self.appendHeader(date)
         self.writeTablesToFile()
         self.document.save(str(name) + str(fileFormat))
+        self.data = []

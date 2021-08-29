@@ -15,12 +15,11 @@ class Ui(QWidget):
 
         self.document = DocumentComposer()
 
+        self.tableView = QTableView()
         self.setTableView()
         self.initUi()
 
     def setTableView(self):
-
-        self.tableView = QTableView()
         self.tableView.setModel(self.model)
         self.tableView.setWordWrap(True)
         self.tableView.setTextElideMode(Qt.ElideMiddle)
@@ -191,8 +190,29 @@ class Ui(QWidget):
 
     def countResult(self):
         items = [QStandardItem("") for _ in range(4)]
+
+        # Подчет количества товара в текущей группе
+        currentCount = 0
+        for row in range(self.model.rowCount()):
+            index = self.model.index(row, 1)
+            value = str(self.model.data(index))
+            if not value.isnumeric():
+                continue
+            currentCount += int(value)
+
+        # Подчет суммы денег в текущей группе
+        currentSum = 0
+        for row in range(self.model.rowCount()):
+            index = self.model.index(row, 2)
+            value = str(self.model.data(index))
+            if not value.isnumeric():
+                continue
+            currentSum += int(value)
+
         items[0].setText("ИТОГО")
-        items[-1].setText(self.paymentBox.currentText())
+        items[1].setText(str(currentCount))
+        items[2].setText((str(currentSum)))
+        items[3].setText(self.paymentBox.currentText())
         for item in items:
             item.setBackground(QColor(247, 134, 5))
         self.model.appendRow(items)
@@ -204,8 +224,6 @@ class Ui(QWidget):
                                               '.docx;;.pdf')
         if not name:
             return
-        print(name)
-        print(a)
         self.document.saveToFile(name, a, self.dateEdit.date().toPyDate())
 
     def startToListen(self, flag=True):
@@ -255,6 +273,7 @@ class Ui(QWidget):
         self.document.appendDataToTable(self.model)
         self.model.clear()
         self.model.setHorizontalHeaderLabels(["Наименование", "К-во", "Цена", "Прим."])
+        self.setTableView()
 
 
 def initUi():
