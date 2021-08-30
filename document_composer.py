@@ -12,11 +12,11 @@ class DocumentComposer:
         self.data = []
         self.table = self.document.add_table(rows=1, cols=4)
         self.table.style = 'TableGrid'
+        self.currentCustomer = None
 
     def appendHeader(self, date):
         """
         Добавление фразы с датой из QDateEdit -> приходит к нам в формате "2" Августа 2021 г.
-        :return:
         """
         locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
         date = '"' + str(date.day) + '"' + " " + str(date.strftime('%B')).title() + " " + str(date.year) + " г."
@@ -27,18 +27,37 @@ class DocumentComposer:
         cell.underline = True
         cell.merge(self.table.rows[0].cells[3])
 
-    def appendDataToTable(self, model):
+    def appendCustomer(self, customer):
+        """
+        Добавление нового заказчика в таблицу если такой имеется.
+        """
+        print(customer)
+        if customer is not None and self.currentCustomer is None:
+            self.currentCustomer = customer
+        elif customer == self.currentCustomer:
+            return
+        else:
+            self.currentCustomer = customer
+        self.table.add_row()
+        cell = self.table.rows[len(self.table.rows) - 1].cells[0]
+        cell.text = self.currentCustomer
+        cell.bold = True
+        cell.underline = True
+        cell.merge(self.table.rows[len(self.table.rows) - 1].cells[3])
+
+    def appendDataToTable(self, model, customer):
         """
         Добавляет в общий контейнер с данными запись из модели.
-        На вход приходит уже преобразованная data from Model.
         Для удобства все хранится в list.
         """
-        categories = []
-        for row in range(model.rowCount()):
-            categories.append(model.item(row, 0).data(1))
-        print(categories)
         newTable = []
         headers = []
+
+        if customer is None:
+            return
+
+        self.appendCustomer(customer)
+
         for column in range(model.columnCount()):
             headers.append(model.horizontalHeaderItem(column).text())
         newTable.append(headers)
