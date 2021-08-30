@@ -160,10 +160,17 @@ class Ui(QWidget):
         Назначает текущему товару в таблице категорию из categoryBox.
         Сама категория отображается только на моменте формирования моделей для документа.
         """
-        currentCategory = self.categoriesLineEdit.text()
-        for row in range(self.model.rowCount()):
-            for column in range(self.model.columnCount()):
-                self.model.item(row, column).setData(currentCategory, 1)
+        selectedRows = self.tableView.selectionModel().selectedRows()
+        if not selectedRows:
+            return
+        currentCategory = self.categoriesComboBox.currentText()
+        currentCategory = currentCategory[:len(currentCategory) - 1]
+
+        items = [QStandardItem("") for _ in range(4)]
+        items[0] = QStandardItem(currentCategory)
+        print(type(selectedRows))
+        print(selectedRows)
+        self.model.insertRow(selectedRows[0], items)
 
     def appendProductToModel(self):
         items = [QStandardItem("") for _ in range(4)]

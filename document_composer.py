@@ -33,6 +33,10 @@ class DocumentComposer:
         На вход приходит уже преобразованная data from Model.
         Для удобства все хранится в list.
         """
+        categories = []
+        for row in range(model.rowCount()):
+            categories.append(model.item(row, 0).data(1))
+        print(categories)
         newTable = []
         headers = []
         for column in range(model.columnCount()):
