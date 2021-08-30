@@ -67,8 +67,8 @@ class Ui(QWidget):
         self.comboBox = QComboBox(self)
         self.comboBox.setMinimumWidth(100)
         self.comboBox.setBaseSize(100, 50)
+
         comboVLayout.addWidget(self.comboBox)
-        self.comboBox.maximumSize()
         hBox.addWidget(self.fileOpenBtn)
         hBox.addWidget(self.addCustomerBtn)
         hBox.addWidget(self.lineEdit)
@@ -160,10 +160,16 @@ class Ui(QWidget):
         Назначает текущему товару в таблице категорию из categoryBox.
         Сама категория отображается только на моменте формирования моделей для документа.
         """
-        currentCategory = self.categoriesLineEdit.text()
-        for row in range(self.model.rowCount()):
-            for column in range(self.model.columnCount()):
-                self.model.item(row, column).setData(currentCategory, 1)
+        selectedRows = self.tableView.selectionModel().selectedRows()
+        if not selectedRows:
+            return
+        currentCategory = self.categoriesComboBox.currentText()
+        currentCategory = currentCategory[:len(currentCategory) - 1]
+
+        items = [QStandardItem("") for _ in range(4)]
+        items[0] = QStandardItem(currentCategory)
+
+        self.model.insertRow(selectedRows[0].row(), items)
 
     def appendProductToModel(self):
         items = [QStandardItem("") for _ in range(4)]
@@ -270,7 +276,7 @@ class Ui(QWidget):
         Чистит модель.
         :return:
         """
-        self.document.appendDataToTable(self.model)
+        self.document.appendDataToTable(self.model, self.comboBox.currentText())
         self.model.clear()
         self.model.setHorizontalHeaderLabels(["Наименование", "К-во", "Цена", "Прим."])
         self.setTableView()
