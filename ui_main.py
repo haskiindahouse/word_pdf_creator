@@ -67,8 +67,8 @@ class Ui(QWidget):
         self.comboBox = QComboBox(self)
         self.comboBox.setMinimumWidth(100)
         self.comboBox.setBaseSize(100, 50)
+
         comboVLayout.addWidget(self.comboBox)
-        self.comboBox.maximumSize()
         hBox.addWidget(self.fileOpenBtn)
         hBox.addWidget(self.addCustomerBtn)
         hBox.addWidget(self.lineEdit)
@@ -168,9 +168,8 @@ class Ui(QWidget):
 
         items = [QStandardItem("") for _ in range(4)]
         items[0] = QStandardItem(currentCategory)
-        print(type(selectedRows))
-        print(selectedRows)
-        self.model.insertRow(selectedRows[0], items)
+
+        self.model.insertRow(selectedRows[0].row(), items)
 
     def appendProductToModel(self):
         items = [QStandardItem("") for _ in range(4)]
@@ -277,7 +276,7 @@ class Ui(QWidget):
         Чистит модель.
         :return:
         """
-        self.document.appendDataToTable(self.model)
+        self.document.appendDataToTable(self.model, self.comboBox.currentText())
         self.model.clear()
         self.model.setHorizontalHeaderLabels(["Наименование", "К-во", "Цена", "Прим."])
         self.setTableView()
