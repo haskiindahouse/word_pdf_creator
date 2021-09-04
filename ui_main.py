@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5.QtGui import QPixmap, QIcon, QColor, QFont, QStandardItem, QStandardItemModel
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtCore import QTextCodec
 from document_composer import DocumentComposer
 
@@ -63,7 +63,8 @@ class Ui(QWidget):
         self.dateEdit.setCalendarPopup(True)
         self.dateEdit.setTimeSpec(QtCore.Qt.LocalTime)
         self.dateEdit.setGeometry(QtCore.QRect(220, 31, 133, 20))
-
+        self.dateEdit.setDate(QDate.currentDate())
+        
         comboVLayout = QVBoxLayout(self)
         self.comboBox = QComboBox(self)
         self.comboBox.setMinimumWidth(100)
@@ -82,18 +83,15 @@ class Ui(QWidget):
 
         self.addProduct = QPushButton('Добавить продукт', self)
         self.addProduct.setFont(font1)
-        self.addProduct.setFixedSize(150, 50)
         self.addProduct.clicked.connect(self.appendProductToModel)
 
         self.addCategoryToProduct = QPushButton('Назначить категорию', self)
         self.addCategoryToProduct.setFont(font1)
-        self.addCategoryToProduct.setFixedSize(150, 50)
         self.addCategoryToProduct.clicked.connect(self.appendCategoryToProduct)
 
         self.categoriesFile = ""
         self.categoriesBtn = QPushButton('Открыть файл с категориями', self)
         self.categoriesBtn.setFont(font1)
-        self.categoriesBtn.setFixedSize(200, 50)
         self.categoriesBtn.clicked.connect(lambda: self.startToListen(flag=False))
 
         self.categoriesComboBox = QComboBox(self)
@@ -107,7 +105,6 @@ class Ui(QWidget):
         self.categoriesLineEdit = QLineEdit(self)
         self.categoriesLineEdit.setText("Категория")
         self.categoriesLineEdit.setAlignment(Qt.AlignCenter)
-        self.categoriesLineEdit.setFixedSize(100, 20)
 
         categoriesLayout = QHBoxLayout(self)
         categoriesLayout.addWidget(self.categoriesBtn)
@@ -118,7 +115,6 @@ class Ui(QWidget):
 
         self.resultBtn = QPushButton('Подсчитать ИТОГО', self)
         self.resultBtn.setFont(font1)
-        self.resultBtn.setFixedSize(150, 50)
         self.resultBtn.clicked.connect(self.countResult)
 
         self.paymentBox = QComboBox(self)
@@ -137,12 +133,10 @@ class Ui(QWidget):
         btnHLayout = QHBoxLayout(self)
         self.addFileBtn = QPushButton('Добавить запись в файл', self)
         self.addFileBtn.setFont(font1)
-        self.addFileBtn.setFixedSize(150, 50)
         self.addFileBtn.clicked.connect(self.addFile)
 
         self.downloadBtn = QPushButton('Сохранить файл', self)
         self.downloadBtn.setFont(font1)
-        self.downloadBtn.setFixedSize(150, 50)
         self.downloadBtn.clicked.connect(self.formFile)
 
         btnHLayout.addWidget(self.addFileBtn)
