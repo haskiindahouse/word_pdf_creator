@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5.QtGui import QPixmap, QIcon, QColor, QFont, QStandardItem, QStandardItemModel
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QTextCodec
 from document_composer import DocumentComposer
 
 
@@ -11,8 +12,8 @@ class Ui(QWidget):
 
     def __init__(self, model):
         super().__init__()
+        QTextCodec.setCodecForLocale(QTextCodec.codecForName("Windows-1251"))
         self.model = model
-
         self.document = DocumentComposer()
 
         self.tableView = QTableView()
@@ -177,11 +178,8 @@ class Ui(QWidget):
 
     def appendCategoryToComboBox(self):
         """
-        # Раньше добавлялась в модель категорию для отображения в таблицу,
-        # Теперь задается записи и при выгрузке в pdf/word уже добавляются нужные записи о категориях
-        items = [QStandardItem("") for _ in range(4)]
-        items[0].setBackground(QColor("lightGray"))
-        self.model.appendRow(items)
+        Раньше добавлялась в модель категорию для отображения в таблицу,
+        Теперь задается записи и при выгрузке в pdf/word уже добавляются нужные записи о категориях.
         """
         if not self.categoriesFile or not self.categoriesLineEdit.text():
             return
@@ -274,7 +272,6 @@ class Ui(QWidget):
         """
         Отправляет модель для дальнейшей записи ее в файл.
         Чистит модель.
-        :return:
         """
         self.document.appendDataToTable(self.model, self.comboBox.currentText())
         self.model.clear()
