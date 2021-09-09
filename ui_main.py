@@ -19,6 +19,7 @@ class Ui(QWidget):
         self.tableView = QTableView()
         self.setTableView()
         self.initUi()
+        self.setStartFiles()
 
     def setTableView(self):
         self.tableView.setModel(self.model)
@@ -38,7 +39,7 @@ class Ui(QWidget):
         gridLayout = QGridLayout(self)
         hBox = QHBoxLayout(self)
         self.file = ""
-        self.fileOpenBtn = QPushButton('Открыть файл с заказчиками', self)
+        self.fileOpenBtn = QPushButton('Открыть файл с поставщиками', self)
         font1 = self.fileOpenBtn.font()
         font1.setPointSize(10)
         self.fileOpenBtn.setFont(font1)
@@ -46,8 +47,8 @@ class Ui(QWidget):
         self.fileOpenBtn.clicked.connect(lambda: self.startToListen(flag=True))
 
         self.lineEdit = QLineEdit(self)
-        self.lineEdit.setText("Заказчик")
-        self.addCustomerBtn = QPushButton('Добавить заказчика', self)
+        self.lineEdit.setText("Поставщик")
+        self.addCustomerBtn = QPushButton('Добавить поставщика', self)
         font1 = self.addCustomerBtn.font()
         font1.setPointSize(10)
         self.addCustomerBtn.setFont(font1)
@@ -131,6 +132,11 @@ class Ui(QWidget):
         verticalLayout.addWidget(self.tableView)
 
         btnHLayout = QHBoxLayout(self)
+
+        self.deleteBtn = QPushButton('Удалить', self)
+        self.deleteBtn.setFont(font1)
+        self.deleteBtn.clicked.connect(self.deleteFromModel)
+
         self.addFileBtn = QPushButton('Добавить запись в файл', self)
         self.addFileBtn.setFont(font1)
         self.addFileBtn.clicked.connect(self.addFile)
@@ -139,6 +145,7 @@ class Ui(QWidget):
         self.downloadBtn.setFont(font1)
         self.downloadBtn.clicked.connect(self.formFile)
 
+        btnHLayout.addWidget(self.deleteBtn)
         btnHLayout.addWidget(self.addFileBtn)
         btnHLayout.addWidget(self.downloadBtn)
 
@@ -149,6 +156,16 @@ class Ui(QWidget):
         self.setWindowTitle('wordCreator v1.0')
         self.resize(800, 800)
         self.show()
+
+    def deleteFromModel(self):
+        """
+        Удаляет выбранные строки из модели.
+        """
+        selectedRows = self.tableView.selectionModel().selectedRows()
+        if not selectedRows:
+            return
+
+        self.model.removeRows(selectedRows[0].row(), len(selectedRows))
 
     def appendCategoryToProduct(self):
         """
@@ -163,8 +180,11 @@ class Ui(QWidget):
 
         items = [QStandardItem("") for _ in range(4)]
         items[0] = QStandardItem(currentCategory)
-
+        items[0].setData(Qt.AlignCenter, Qt.TextAlignmentRole)
         self.model.insertRow(selectedRows[0].row(), items)
+        item = self.model.item(selectedRows[0].row(), 0)
+        item.setData(4, 4)
+        self.tableView.setSpan(selectedRows[0].row(), 0, 1, 4)
 
     def appendProductToModel(self):
         items = [QStandardItem("") for _ in range(4)]
@@ -215,6 +235,36 @@ class Ui(QWidget):
             item.setBackground(QColor(247, 134, 5))
         self.model.appendRow(items)
 
+    def setStartFiles(self):
+        """
+        Запоминает путь к двум файлам для дальнейшей прогрузки.
+        """
+        with open('autoStart.txt', 'r+') as f:
+            lines = f.readlines()
+        print(lines)
+        if len(lines) < 2:
+            return
+
+        self.file = lines[0][:len(lines[0]) - 1]
+        self.categoriesFile = lines[1][:len(lines[0]) - 1]
+
+
+        self.addCustomerBtn.setEnabled(True)
+        self.addCategory.setEnabled(True)
+
+        with open(self.file) as f:
+            lines = f.readlines()
+        self.comboBox.clear()
+        for line in lines:
+            self.comboBox.addItem(line)
+
+        with open(self.categoriesFile) as f:
+            lines = f.readlines()
+        self.categoriesComboBox.clear()
+        for line in lines:
+            self.categoriesComboBox.addItem(line)
+
+
     def formFile(self):
         name, a = QFileDialog.getSaveFileName(self,
                                               'Save File',
@@ -227,7 +277,7 @@ class Ui(QWidget):
     def startToListen(self, flag=True):
         if flag:
             self.file, _ = QFileDialog.getOpenFileName(self,
-                                                       'Открыть файл с заказчиками',
+                                                       'Открыть файл с поставщиками',
                                                        './',
                                                        'Поставщики (*.txt)')
             fileName = self.file
@@ -249,6 +299,11 @@ class Ui(QWidget):
         comboBox.clear()
         for line in lines:
             comboBox.addItem(line)
+        if self.file is not None and self.categoriesFile is not None:
+            with open('autoStart.txt', 'w') as f:
+                f.seek(0)
+                f.write(self.file + '\n')
+                f.write(self.categoriesFile)
 
     def writeCustomer(self):
         if not self.file or not self.lineEdit.text():
@@ -267,6 +322,8 @@ class Ui(QWidget):
         Отправляет модель для дальнейшей записи ее в файл.
         Чистит модель.
         """
+        if not self.model.rowCount():
+            return
         self.document.appendDataToTable(self.model, self.comboBox.currentText())
         self.model.clear()
         self.model.setHorizontalHeaderLabels(["Наименование", "К-во", "Цена", "Прим."])
