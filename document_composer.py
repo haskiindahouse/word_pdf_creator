@@ -2,7 +2,8 @@ from docx import Document
 from docx.oxml.ns import nsdecls
 from docx.oxml import parse_xml
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.shared import Inches
+from docx.enum.table import WD_ROW_HEIGHT_RULE
+from docx.shared import Cm
 from PyQt5.QtGui import QStandardItemModel
 import locale
 
@@ -13,7 +14,9 @@ class DocumentComposer:
         super(DocumentComposer, self).__init__()
         self.document = Document()
         self.data = []
+        self.spanRows = []
         self.table = self.document.add_table(rows=1, cols=4)
+        self.table.autofit = True
         self.table.style = 'TableGrid'
         self.currentCustomer = None
 
@@ -25,6 +28,8 @@ class DocumentComposer:
         lastRow = self.table.rows[len(self.table.rows) - 1]
         self.make_rows_bold(lastRow)
         cells = lastRow.cells
+        if cells[0].text != 'ИТОГО':
+            return
         for cell in cells:
             shading_elm_1 = parse_xml(r'<w:shd {} w:fill="ffae00"/>'.format(nsdecls('w')))
             cell._tc.get_or_add_tcPr().append(shading_elm_1)
@@ -71,8 +76,6 @@ class DocumentComposer:
         titleName = "Заявка на " + date
         cell = self.table.rows[0].cells[0]
         cell.text = titleName
-        cell.bold = True
-        cell.underline = True
         cell.merge(self.table.rows[0].cells[3])
         cell.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
         self.make_rows_bold(self.table.rows[0])
@@ -116,9 +119,20 @@ class DocumentComposer:
             newTable.append([])
             for column in range(model.columnCount()):
                 index = model.index(row, column)
-                newTable[row].append(str(model.data(index)))
-        newTable = newTable[:len(newTable) - 1]
+                spanData = model.item(row, column).data(4)
+                if spanData is not None:
+                    self.spanRows.append(row)
+                newTable[row + 1].append(str(model.data(index)))
         self.data.append(newTable)
+
+    def mergeCell(self, cell1, cell2, row):
+        """
+        Объединение ячеек.
+        """
+        cell1.merge(cell2)
+        cell1.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        self.make_rows_bold(self.table.rows[row])
+        self.make_rows_underline(self.table.rows[row].cells)
 
     def appendTableToFile(self, table):
         """
@@ -131,6 +145,8 @@ class DocumentComposer:
             for column in range(len(table[-1])):
                 cell = self.table.rows[len(self.table.rows) - 1].cells[column]
                 cell.text = table[row][column]
+        for rowSpan in self.spanRows:
+            self.mergeCell(self.table.rows[rowSpan + 3].cells[0], self.table.rows[rowSpan + 3].cells[3], rowSpan + 3)
 
         self.set_result_bg_color()
 
@@ -141,7 +157,7 @@ class DocumentComposer:
         table = self.document.add_table(rows=6, cols=2)
         table.style = 'TableGrid'
         data = (
-            ('расходы', 'зачисления'),
+            ('расходы', 'сумма'),
             ('Получено с кассы', ''),
             ('Оплачено ООО', ''),
             ('ГСМ/ком-ные', ''),
@@ -171,3 +187,10 @@ class DocumentComposer:
         self.appendEndTable()
         self.document.save(str(name) + str(fileFormat))
         self.data = []
+        self.spanRows = []
+        self.document = Document()
+        self.table = self.document.add_table(rows=1, cols=4)
+        self.table.autofit = True
+
+        self.table.style = 'TableGrid'
+        self.currentCustomer = None
