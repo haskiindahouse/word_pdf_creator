@@ -1,4 +1,5 @@
 import sys
+import os
 
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
@@ -153,7 +154,7 @@ class Ui(QWidget):
 
         self.setLayout(verticalLayout)
         self.move(300, 300)
-        self.setWindowTitle('wordCreator v1.0')
+        self.setWindowTitle('wordCreator v1.1')
         self.resize(800, 800)
         self.show()
 
@@ -180,11 +181,10 @@ class Ui(QWidget):
 
         items = [QStandardItem("") for _ in range(4)]
         items[0] = QStandardItem(currentCategory)
-        items[0].setData(Qt.AlignCenter, Qt.TextAlignmentRole)
+        for item in items:
+            item.setBackground(QColor(192, 192, 192))
+        items[0].setData(4, 4)
         self.model.insertRow(selectedRows[0].row(), items)
-        item = self.model.item(selectedRows[0].row(), 0)
-        item.setData(4, 4)
-        self.tableView.setSpan(selectedRows[0].row(), 0, 1, 4)
 
     def appendProductToModel(self):
         items = [QStandardItem("") for _ in range(4)]
@@ -239,9 +239,12 @@ class Ui(QWidget):
         """
         Запоминает путь к двум файлам для дальнейшей прогрузки.
         """
-        with open('autoStart.txt', 'r+') as f:
+        fileName = 'autoStart.txt'
+        m = 'w+'
+        if os.path.exists(fileName):
+            m = 'r+'
+        with open(fileName, m) as f:
             lines = f.readlines()
-        print(lines)
         if len(lines) < 2:
             return
 
@@ -255,12 +258,14 @@ class Ui(QWidget):
         with open(self.file) as f:
             lines = f.readlines()
         self.comboBox.clear()
+
         for line in lines:
             self.comboBox.addItem(line)
 
         with open(self.categoriesFile) as f:
             lines = f.readlines()
         self.categoriesComboBox.clear()
+
         for line in lines:
             self.categoriesComboBox.addItem(line)
 
@@ -303,7 +308,7 @@ class Ui(QWidget):
             with open('autoStart.txt', 'w') as f:
                 f.seek(0)
                 f.write(self.file + '\n')
-                f.write(self.categoriesFile)
+                f.write(self.categoriesFile + '\n')
 
     def writeCustomer(self):
         if not self.file or not self.lineEdit.text():

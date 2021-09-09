@@ -34,12 +34,14 @@ class DocumentComposer:
             shading_elm_1 = parse_xml(r'<w:shd {} w:fill="ffae00"/>'.format(nsdecls('w')))
             cell._tc.get_or_add_tcPr().append(shading_elm_1)
 
-    def set_header_bg_color(self):
+    def set_header_bg_color(self, rowIndex=None):
         """
         Задает задний фон для строчек с подсчетом "ИТОГО".
         """
-
-        lastRow = self.table.rows[len(self.table.rows) - 1]
+        localIndex = len(self.table.rows) - 1
+        if rowIndex is not None:
+            localIndex = rowIndex
+        lastRow = self.table.rows[localIndex]
         self.make_rows_bold(lastRow)
         cells = lastRow.cells
         for cell in cells:
@@ -109,9 +111,11 @@ class DocumentComposer:
 
         if customer is None:
             return
-
+        self.spanRows = []
         self.appendCustomer(customer)
-
+        rowCount = 0
+        for item in self.data:
+            rowCount += len(item)
         for column in range(model.columnCount()):
             headers.append(model.horizontalHeaderItem(column).text())
         newTable.append(headers)
@@ -120,10 +124,11 @@ class DocumentComposer:
             for column in range(model.columnCount()):
                 index = model.index(row, column)
                 spanData = model.item(row, column).data(4)
-                if spanData is not None:
-                    self.spanRows.append(row)
+                if spanData is not None and row + rowCount + 1 not in self.spanRows:
+                    self.spanRows.append(row + rowCount + 1)
                 newTable[row + 1].append(str(model.data(index)))
         self.data.append(newTable)
+        self.appendTableToFile(newTable, len(self.data))
 
     def mergeCell(self, cell1, cell2, row):
         """
@@ -134,7 +139,7 @@ class DocumentComposer:
         self.make_rows_bold(self.table.rows[row])
         self.make_rows_underline(self.table.rows[row].cells)
 
-    def appendTableToFile(self, table):
+    def appendTableToFile(self, table, i):
         """
         Добавляет таблицу в файл.
         """
@@ -142,11 +147,11 @@ class DocumentComposer:
             self.table.add_row()
             if row == 0:
                 self.set_header_bg_color()
-            for column in range(len(table[-1])):
+            for column in range(len(table[row])):
                 cell = self.table.rows[len(self.table.rows) - 1].cells[column]
                 cell.text = table[row][column]
         for rowSpan in self.spanRows:
-            self.mergeCell(self.table.rows[rowSpan + 3].cells[0], self.table.rows[rowSpan + 3].cells[3], rowSpan + 3)
+            self.set_header_bg_color(rowSpan + i + 1)
 
         self.set_result_bg_color()
 
@@ -174,8 +179,10 @@ class DocumentComposer:
         """
         Для удобства записи большого количества таблиц в файл.
         """
+        i = 0
         for table in self.data:
-            self.appendTableToFile(table)
+            self.appendTableToFile(table, i)
+            i += 1
 
     def saveToFile(self, name, fileFormat, date):
         """
@@ -183,7 +190,7 @@ class DocumentComposer:
         Содержит в себе вызовы всех вспомогательных методов класса.
         """
         self.appendHeader(date)
-        self.writeTablesToFile()
+        #self.writeTablesToFile()
         self.appendEndTable()
         self.document.save(str(name) + str(fileFormat))
         self.data = []
