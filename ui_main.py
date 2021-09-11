@@ -177,8 +177,7 @@ class Ui(QWidget):
         if not selectedRows:
             return
         currentCategory = self.categoriesComboBox.currentText()
-        currentCategory = currentCategory[:len(currentCategory) - 1]
-
+        currentCategory = str(currentCategory).strip()
         items = [QStandardItem("") for _ in range(4)]
         items[0] = QStandardItem(currentCategory)
         for item in items:
