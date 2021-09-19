@@ -3,8 +3,13 @@ from docx.oxml.ns import nsdecls
 from docx.oxml import parse_xml
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_ROW_HEIGHT_RULE
-from docx.shared import Cm
+
+from docx.shared import Pt
+
+from docx.shared import Inches, Cm
+
 from PyQt5.QtGui import QStandardItemModel
+
 import locale
 
 
@@ -13,6 +18,18 @@ class DocumentComposer:
     def __init__(self):
         super(DocumentComposer, self).__init__()
         self.document = Document()
+        sections = self.document.sections
+        for section in sections:
+            section.top_margin = Cm(0.5)
+            section.bottom_margin = Cm(0.5)
+            section.left_margin = Cm(1)
+            section.right_margin = Cm(1)
+
+        style = self.document.styles['Normal']
+        font = style.font
+        font.name = 'Arial'
+        font.size = Pt(12)
+
         self.data = []
         self.spanRows = []
         self.table = self.document.add_table(rows=1, cols=4)
@@ -36,7 +53,7 @@ class DocumentComposer:
 
     def set_header_bg_color(self, rowIndex=None):
         """
-        Задает задний фон для строчек с подсчетом "ИТОГО".
+        Задает задний фон для строчек с заголовком (цена/кол-во и т.д.).
         """
         localIndex = len(self.table.rows) - 1
         if rowIndex is not None:
@@ -45,6 +62,8 @@ class DocumentComposer:
         self.make_rows_bold(lastRow)
         cells = lastRow.cells
         for cell in cells:
+            # НЕ РАБОТАЕТ
+            cell.paragraphs[0].alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
             shading_elm_1 = parse_xml(r'<w:shd {} w:fill="878787"/>'.format(nsdecls('w')))
             cell._tc.get_or_add_tcPr().append(shading_elm_1)
 
@@ -95,7 +114,7 @@ class DocumentComposer:
             self.currentCustomer = customer
         self.table.add_row()
         cell = self.table.rows[len(self.table.rows) - 1].cells[0]
-        cell.text = self.currentCustomer
+        cell.text = self.currentCustomer.strip()
         cell.bold = True
         cell.underline = True
         self.make_rows_bold(self.table.rows[len(self.table.rows) - 1])
@@ -150,6 +169,7 @@ class DocumentComposer:
             for column in range(len(table[row])):
                 cell = self.table.rows[len(self.table.rows) - 1].cells[column]
                 cell.text = table[row][column]
+
         for rowSpan in self.spanRows:
             self.set_header_bg_color(rowSpan + i + 1)
 
