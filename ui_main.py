@@ -247,9 +247,8 @@ class Ui(QWidget):
         if len(lines) < 2:
             return
 
-        self.file = lines[0][:len(lines[0]) - 1]
-        self.categoriesFile = lines[1][:len(lines[0]) - 1]
-
+        self.file = lines[0].strip()
+        self.categoriesFile = lines[1].strip()
 
         self.addCustomerBtn.setEnabled(True)
         self.addCategory.setEnabled(True)
