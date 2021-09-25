@@ -39,6 +39,7 @@ class Ui(QWidget):
         verticalLayout = QVBoxLayout(self)
         gridLayout = QGridLayout(self)
         hBox = QHBoxLayout(self)
+
         self.file = ""
         self.fileOpenBtn = QPushButton('Открыть файл с поставщиками', self)
         font1 = self.fileOpenBtn.font()
@@ -53,7 +54,7 @@ class Ui(QWidget):
 
         self.addCustomerBtn = QPushButton('Добавить поставщика', self)
         font1 = self.addCustomerBtn.font()
-        font1.setPointSize(10)
+        font1.setPointSize(12)
         self.addCustomerBtn.setFont(font1)
         self.addCustomerBtn.setFixedSize(200, 50)
         self.addCustomerBtn.setEnabled(False)
@@ -71,12 +72,19 @@ class Ui(QWidget):
         self.dateEdit.setDate(QDate.currentDate())
         self.dateEdit.setFixedSize(150, 50)
 
+        self.spanBtn = QPushButton("Объединить ячейки", self)
+        font1 = self.spanBtn.font()
+        font1.setPointSize(12)
+        self.spanBtn.setFont(font1)
+        self.spanBtn.setFixedSize(200, 50)
+        self.spanBtn.setEnabled(True)
+        self.spanBtn.clicked.connect(self.spanRow)
+
         comboVLayout = QVBoxLayout(self)
         self.comboBox = QComboBox(self)
-        self.comboBox.setMinimumWidth(100)
-        self.comboBox.setBaseSize(100, 50)
 
         comboVLayout.addWidget(self.comboBox)
+        hBox.addWidget(self.spanBtn)
         hBox.addWidget(self.fileOpenBtn)
         hBox.addWidget(self.addCustomerBtn)
         hBox.addWidget(self.lineEdit)
@@ -96,7 +104,7 @@ class Ui(QWidget):
 
         self.addCategoryToProduct = QPushButton('Назначить категорию', self)
         self.addCategoryToProduct.setFont(font1)
-        self.addCategoryToProduct.setFixedSize(150, 50)
+        self.addCategoryToProduct.setFixedSize(250, 50)
 
         self.addCategoryToProduct.clicked.connect(self.appendCategoryToProduct)
 
@@ -121,6 +129,7 @@ class Ui(QWidget):
         self.categoriesLineEdit.setAlignment(Qt.AlignCenter)
 
         categoriesLayout = QHBoxLayout(self)
+        categoriesLayout.setAlignment(Qt.AlignLeft)
         categoriesLayout.addWidget(self.categoriesBtn)
         categoriesLayout.addWidget(self.addCategory)
         categoriesLayout.addWidget(self.categoriesLineEdit)
@@ -133,7 +142,7 @@ class Ui(QWidget):
         self.resultBtn.clicked.connect(self.countResult)
 
         self.paymentBox = QComboBox(self)
-        self.paymentBox.setMinimumWidth(120)
+        self.paymentBox.setFixedSize(150, 50)
         self.paymentBox.addItem("Оплата б/н")
         self.paymentBox.addItem("Оплата наличными")
 
@@ -168,7 +177,7 @@ class Ui(QWidget):
         self.setLayout(verticalLayout)
         self.move(300, 300)
         self.setWindowTitle('wordCreator v1.3')
-        self.resize(800, 800)
+        self.resize(1200, 1200)
         self.show()
 
     def deleteFromModel(self):
@@ -180,6 +189,20 @@ class Ui(QWidget):
             return
 
         self.model.removeRows(selectedRows[0].row(), len(selectedRows))
+
+    def spanRow(self):
+        """
+        Объединяет строки в моделе.
+        """
+        selectedRows = self.tableView.selectionModel().selectedRows()
+
+        if not selectedRows or len(selectedRows) == 1:
+            return
+
+        delta = selectedRows[-1].row() - selectedRows[0].row()
+        self.tableView.setSpan(selectedRows[0].row(), 3, delta + 1, 1)
+        index = self.model.index(selectedRows[0].row(), 3)
+        self.model.itemFromIndex(index).setData(delta + 1, 5)
 
     def appendCategoryToProduct(self):
         """
