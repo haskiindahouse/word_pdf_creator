@@ -35,6 +35,7 @@ class DocumentComposer:
         self.spanRows = []
         self.realSpanRows = []
         self.customers = []
+        self.customerCount = 0
 
         self.table = self.document.add_table(rows=1, cols=4)
         self.table.autofit = True
@@ -100,8 +101,8 @@ class DocumentComposer:
         (row, column, spanData)
         """
         for row, column, spanData in self.realSpanRows:
-            cell = self.table.rows[row + 3].cells[column]
-            cell.merge(self.table.rows[row + spanData + 2].cells[column])
+            cell = self.table.rows[row + 2].cells[column]
+            cell.merge(self.table.rows[row + spanData + 1].cells[column])
 
     def appendHeader(self, date):
         """
@@ -155,8 +156,16 @@ class DocumentComposer:
 
         self.spanRows = []
         rowCount = 0
+        rowBefore = 0
+
+        self.customerCount += 1
+
+        for item in self.data:
+            rowBefore += len(item)
+
         for item in self.data:
             rowCount += len(item)
+
         for column in range(model.columnCount()):
             headers.append(model.horizontalHeaderItem(column).text())
 
@@ -170,7 +179,7 @@ class DocumentComposer:
 
                 spanData = model.itemFromIndex(index).data(5)
                 if spanData is not None:
-                    self.realSpanRows.append((row, column, spanData))
+                    self.realSpanRows.append((row + rowBefore + self.customerCount, column, spanData))
 
                 newTable[row].append(str(model.data(index)))
 
@@ -251,6 +260,7 @@ class DocumentComposer:
         self.data = []
         self.spanRows = []
         self.realSpanRows = []
+        self.customerCount = 0
 
         self.document = Document()
         self.table = self.document.add_table(rows=1, cols=4)
