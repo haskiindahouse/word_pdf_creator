@@ -279,6 +279,8 @@ class DocumentComposer:
         self.spanRows = []
         self.realSpanRows = []
         self.customerCount = 0
+        self.linesCurrentPage = 0
+        self.pageCount = 0
 
         self.document = Document()
         self.table = self.document.add_table(rows=1, cols=4)
