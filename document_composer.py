@@ -37,6 +37,8 @@ class DocumentComposer:
         self.customers = []
         self.customerCount = 0
 
+        self.linesCurrentPage = 0
+
         self.table = self.document.add_table(rows=1, cols=4)
         self.table.autofit = True
         self.table.style = 'TableGrid'
@@ -118,6 +120,7 @@ class DocumentComposer:
         self.make_rows_bold(self.table.rows[0])
         self.make_rows_underline(self.table.rows[0].cells)
         self.pageCount += 1
+        self.linesCurrentPage += 1
 
     def appendCustomer(self, customer):
         """
@@ -130,7 +133,10 @@ class DocumentComposer:
         else:
             self.currentCustomer = customer
         self.table.add_row()
+
         self.pageCount += 1
+        self.linesCurrentPage += 1
+
         cell = self.table.rows[len(self.table.rows) - 1].cells[0]
 
         self.customers.append(len(self.table.rows) - 1)
@@ -156,12 +162,8 @@ class DocumentComposer:
 
         self.spanRows = []
         rowCount = 0
-        rowBefore = 0
 
         self.customerCount += 1
-
-        for item in self.data:
-            rowBefore += len(item)
 
         for item in self.data:
             rowCount += len(item)
@@ -179,7 +181,7 @@ class DocumentComposer:
 
                 spanData = model.itemFromIndex(index).data(5)
                 if spanData is not None:
-                    self.realSpanRows.append((row + rowBefore + self.customerCount, column, spanData))
+                    self.realSpanRows.append((row + rowCount + self.customerCount, column, spanData))
 
                 newTable[row].append(str(model.data(index)))
 
@@ -202,8 +204,24 @@ class DocumentComposer:
         """
         Добавляет таблицу в файл.
         """
+        pageBreakLine = 0
+
+        step = 31
+        myRange = [0, 31]
+        while self.linesCurrentPage not in range(myRange[0], myRange[1]):
+            myRange[0] = myRange[1]
+            myRange[1] += step
+
+        secondRange = [0, 31]
+        while self.linesCurrentPage + len(table) not in range(secondRange[0], secondRange[1]):
+            secondRange[0] = secondRange[1]
+            secondRange[1] += step
+        if myRange != secondRange:
+            self.document.add_page_break()
         for row in range(len(table)):
             self.table.add_row()
+            pageBreakLine += 1
+            self.linesCurrentPage += 1
             for column in range(len(table[row])):
                 cell = self.table.rows[len(self.table.rows) - 1].cells[column]
                 cell.text = table[row][column]
@@ -292,6 +310,6 @@ class DocumentComposer:
         for index in indexes:
             row0 = t.rows[index]
             row0._tr.addnext(rowWithHeader)
-            var = list(filter(lambda x: x < index, self.customers))[-1]
-            toInsert = self.customers.index(var)
-            row0._tr.addnext(copyCustomers[toInsert])
+            #var = list(filter(lambda x: x < index, self.customers))[-1]
+            #toInsert = self.customers.index(var)
+            #row0._tr.addnext(copyCustomers[toInsert])
